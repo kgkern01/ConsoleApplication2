@@ -43,66 +43,102 @@ namespace ConsoleApplication2
                         var toolName = "";
                         var propertyName = "";
 
-                        var tool = line.Split('.');
-
-                        switch (decimalCount)
-                        {
-                            case 0:
-                                programName = tool[0].Substring(line.IndexOf("]") + 2);
-                                break;
-                            case 1:
-                                programName = tool[0].Substring(line.IndexOf("]") + 2).Trim();
-                                taskName = tool[1];
-                                break;
-                            case 2:
-                                programName = tool[0].Substring(line.IndexOf("]") + 2).Trim();
-                                taskName = tool[1];
-                                toolName = tool[2].Contains(":") ? tool[2].Substring(0, tool[2].IndexOf(":")) : tool[2];
-                                break;
-                        }
-
                         var parameterName = "";
                         var paramterType = "";
+                        var tool = new string[] {};
+
                         if (line.Contains("--->"))
                         {
                             parameterName = line.Substring(0, line.IndexOf(" --->")).Trim();
                             paramterType = "Output";
+                            tool = line.Substring(line.IndexOf(" --->")).Split('.');
                         }
                         else if (line.Contains("<---"))
                         {
                             parameterName = line.Substring(0, line.IndexOf(" <---")).Trim();
                             paramterType = "Input";
+                            tool = line.Substring(line.IndexOf(" <---")).Split('.');
+                        }
+                        else
+                        {
+                            tool = line.Split('.');
+                        }
+
+                        programName = tool[0].Substring(tool[0].IndexOf("]") + 2).Trim();
+
+                        switch (decimalCount)
+                        {
+                            case 1:
+                                taskName = tool[1];
+                                break;
+                            case 2:
+                                taskName = tool[1];
+                                toolName = tool[2].Contains(":") ? tool[2].Substring(0, tool[2].IndexOf(":")) : tool[2];
+                                break;
                         }
 
                         if (isTool)
                         {
                             toolPath = new ToolPath
                             {
-                                ToolType = type
+                                ToolType = pathName,
+                                ProgramName = programName,
+                                ToolProperties = new List<Property>()
                             };
+                            toolList.Add(toolPath);
                         }
                         else
                         {
                             toolPath.ToolProperties.Add(new Property
                             {
                                 Direction = paramterType,
-                                Name = parameterName
+                                Name = parameterName,
+                                LinkedProperty = new LinkedProperty
+                                {
+                                    ToolType = type,
+                                    Program = new Models.Program
+                                    {
+                                        Name = tool[0].Substring(tool[0].IndexOf("]") +2 ).Trim(),
+                                    }
+                                }
                             });
                         }
 
-                        Console.WriteLine("Path: " + pathName);
-                        Console.WriteLine("Parameter Name: " + parameterName);
-                        Console.WriteLine("Parameter type: " + paramterType);
-                        Console.WriteLine("Program: " + programName);
-                        Console.WriteLine("Type:" + type);
-                        Console.WriteLine("Task: " + taskName);
-                        Console.WriteLine("Tool: " + toolName);
-                        Console.WriteLine("Linked Property: " + linkedProperty);
-                        Console.WriteLine("****************");
+                        //toolList.Add(toolPath);
+
+                        //Console.WriteLine("Path: " + pathName);
+                        //Console.WriteLine("Parameter Name: " + parameterName);
+                        //Console.WriteLine("Parameter type: " + paramterType);
+                        //Console.WriteLine("Program: " + programName);
+                        //Console.WriteLine("Type:" + toolPath.ToolType);
+                        //Console.WriteLine("Task: " + taskName);
+                        //Console.WriteLine("Tool: " + toolName);
+                        //Console.WriteLine("Linked Property: " + linkedProperty);
+                        //Console.WriteLine("****************");
                     }
+
+                }
+                foreach (var item in toolList)
+                {
+                    Console.WriteLine("Tool Name: " + item.ToolType);
+                    Console.WriteLine("Program:" + item.ProgramName);
+                    
+                    foreach (var prop in item.ToolProperties)
+                    {
+                        Console.WriteLine("Property Name: " + prop.Name);
+                        Console.WriteLine("Direction: " + prop.Direction);
+                        Console.WriteLine("Linked Property: Type: " + prop.LinkedProperty.ToolType + " Program: " + prop.LinkedProperty.Program.Name);
+                        if (prop.LinkedProperty.Program.Name != item.ProgramName)
+                        {
+                            Console.WriteLine("External Program: " + prop.LinkedProperty.Program.Name);
+                        }
+                    }
+                    Console.WriteLine("*************************");
+                    Console.WriteLine("*************************");
                 }
             }
 
+            Console.WriteLine("*** Press any key to continue ***");
             Console.ReadLine();
         }
     }

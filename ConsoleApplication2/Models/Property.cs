@@ -6,6 +6,6 @@
 
         public string Direction { get; set; }
 
-        public LinkedProperty { get; set; }
+        public LinkedProperty LinkedProperty { get; set; }
     }
 }

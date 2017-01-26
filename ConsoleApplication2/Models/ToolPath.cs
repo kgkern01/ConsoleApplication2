@@ -6,6 +6,8 @@ namespace ConsoleApplication2.Models
     {
         public string ToolType { get; set; }
 
+        public string ProgramName { get; set; }
+
         public List<Property> ToolProperties { get; set; }
     }
 }
