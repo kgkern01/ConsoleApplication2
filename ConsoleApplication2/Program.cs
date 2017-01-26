@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using ConsoleApplication2.Models;
 
@@ -12,11 +13,9 @@ namespace ConsoleApplication2
             var fileName = @"C:\Projects\Test\Sample.txt";
 
             // Read a text file using StreamReader 
-            using (var sr = new System.IO.StreamReader(fileName))
+            using (var sr = new StreamReader(fileName))
             {
                 string line;
-                var pathName = "";
-                var newTool = true;
                 var toolList = new List<ToolPath>();
                 var toolPath = new ToolPath();
 
@@ -25,10 +24,8 @@ namespace ConsoleApplication2
                     //Remove leading line
                     if (!line.StartsWith("Link List") && line.Trim() != "")
                     {
-                        pathName = line;
+                        var pathName = line;
                         var isTool = line.StartsWith("[");
-
-                        
 
                         var type = line.Split('[', ']')[1];
 
@@ -66,16 +63,7 @@ namespace ConsoleApplication2
 
                         programName = tool[0].Substring(tool[0].IndexOf("]") + 2).Trim();
 
-                        switch (decimalCount)
-                        {
-                            case 1:
-                                taskName = tool[1];
-                                break;
-                            case 2:
-                                taskName = tool[1];
-                                toolName = tool[2].Contains(":") ? tool[2].Substring(0, tool[2].IndexOf(":")) : tool[2];
-                                break;
-                        }
+                        
 
                         if (isTool)
                         {
@@ -89,6 +77,17 @@ namespace ConsoleApplication2
                         }
                         else
                         {
+                            switch (decimalCount)
+                            {
+                                case 1:
+                                    taskName = tool[1];
+                                    break;
+                                case 2:
+                                    taskName = tool[1];
+                                    toolName = tool[2].Contains(":") ? tool[2].Substring(0, tool[2].IndexOf(":")) : tool[2];
+                                    break;
+                            }
+
                             toolPath.ToolProperties.Add(new Property
                             {
                                 Direction = paramterType,
@@ -99,47 +98,100 @@ namespace ConsoleApplication2
                                     Program = new Models.Program
                                     {
                                         Name = tool[0].Substring(tool[0].IndexOf("]") +2 ).Trim(),
-                                    }
+                                        Task = new Task { Name = taskName, Tool = new Tool { Name = toolName} }
+                                    },
+                                   IsExternal = toolPath.ProgramName == tool[0].Substring(tool[0].IndexOf("]") + 2).Trim(),
+                                   Name = linkedProperty
                                 }
                             });
+
                         }
-
-                        //toolList.Add(toolPath);
-
-                        //Console.WriteLine("Path: " + pathName);
-                        //Console.WriteLine("Parameter Name: " + parameterName);
-                        //Console.WriteLine("Parameter type: " + paramterType);
-                        //Console.WriteLine("Program: " + programName);
-                        //Console.WriteLine("Type:" + toolPath.ToolType);
-                        //Console.WriteLine("Task: " + taskName);
-                        //Console.WriteLine("Tool: " + toolName);
-                        //Console.WriteLine("Linked Property: " + linkedProperty);
-                        //Console.WriteLine("****************");
                     }
-
                 }
-                foreach (var item in toolList)
+
+                var isValid = true;
+                do
                 {
-                    Console.WriteLine("Tool Name: " + item.ToolType);
-                    Console.WriteLine("Program:" + item.ProgramName);
-                    
-                    foreach (var prop in item.ToolProperties)
+                    Console.WriteLine("File has been ran.  Please select output option:");
+                    Console.WriteLine(" 1 - To show results on screen");
+                    Console.WriteLine(" 2 - Output results to file named Sample_Output.txt");
+                    Console.WriteLine(" 3 - Exit");
+                    var option = Console.ReadLine();
+
+                    switch (option)
                     {
-                        Console.WriteLine("Property Name: " + prop.Name);
-                        Console.WriteLine("Direction: " + prop.Direction);
-                        Console.WriteLine("Linked Property: Type: " + prop.LinkedProperty.ToolType + " Program: " + prop.LinkedProperty.Program.Name);
+                        case "1":
+                            OutputResults(toolList);
+                            break;
+                        case "2":
+                            var fs = new FileStream(@"C:\Projects\Test\Sample_Output.txt", FileMode.Create);
+                            // First, save the standard output.
+                            var tmp = Console.Out;
+                            var sw = new StreamWriter(fs);
+                            Console.SetOut(sw);
+                            OutputResults(toolList);
+                            Console.SetOut(tmp);
+                            sw.Close();
+                            break;
+                        case "3":
+                            return;
+                        default:
+                            isValid = false;
+                            Console.WriteLine("Invalid option, please enter either 1 - Screen or 2 - File");
+                            break;
+                    }
+                } while (isValid);
+            }
+        }
+
+        private static void OutputResults(List<ToolPath> toolList)
+        {
+            foreach (var item in toolList)
+            {
+                Console.WriteLine("Tool Name: " + item.ToolType);
+                Console.WriteLine("");
+
+                if (item.ToolProperties.Any(t => !t.LinkedProperty.IsExternal))
+                {
+                    Console.WriteLine("***Internal Program Dependencies ***");
+                    foreach (var prop in item.ToolProperties.Where(p => !p.LinkedProperty.IsExternal))
+                    {
+                        Console.WriteLine("     Property Name: " + prop.Name);
+                        Console.WriteLine("     Linked Property: Type: " + prop.LinkedProperty.ToolType);
+                        if (prop.LinkedProperty.Program.Task.Name != "")
+                            Console.WriteLine("                      Task: " + prop.LinkedProperty.Program.Task.Name);
+                        if (prop.LinkedProperty.Program.Task.Tool.Name != "")
+                            Console.WriteLine("                      Tool: " + prop.LinkedProperty.Program.Task.Tool.Name);
+                        Console.WriteLine("                      Property Name: " + prop.LinkedProperty.Name);
+                        Console.WriteLine("     Direction: " + prop.Direction);
+
+                        Console.WriteLine("");
+                    }
+                }
+                if (item.ToolProperties.Any(t => t.LinkedProperty.IsExternal))
+                {
+                    Console.WriteLine("***External Program Dependencies ***");
+                    foreach (var prop in item.ToolProperties.Where(p => p.LinkedProperty.IsExternal))
+                    {
+                        Console.WriteLine("     Property Name: " + prop.Name);
+                        Console.WriteLine("     Direction: " + prop.Direction);
                         if (prop.LinkedProperty.Program.Name != item.ProgramName)
                         {
-                            Console.WriteLine("External Program: " + prop.LinkedProperty.Program.Name);
+                            Console.WriteLine("     ***External Program: " + prop.LinkedProperty.Program.Name);
                         }
-                    }
-                    Console.WriteLine("*************************");
-                    Console.WriteLine("*************************");
-                }
-            }
+                        Console.WriteLine("     Linked Property: Type: " + prop.LinkedProperty.ToolType);
+                        if (prop.LinkedProperty.Program.Task.Name != "")
+                            Console.WriteLine("                      Task: " + prop.LinkedProperty.Program.Task.Name);
+                        if (prop.LinkedProperty.Program.Task.Tool.Name != "")
+                            Console.WriteLine("                      Tool: " + prop.LinkedProperty.Program.Task.Tool.Name);
+                        Console.WriteLine("                      Property Name: " + prop.LinkedProperty.Name);
 
-            Console.WriteLine("*** Press any key to continue ***");
-            Console.ReadLine();
+                        Console.WriteLine("");
+                    }
+                }
+                Console.WriteLine("************************************************");
+                Console.WriteLine("");
+            }
         }
     }
 }

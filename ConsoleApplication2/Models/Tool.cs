@@ -6,6 +6,7 @@ namespace ConsoleApplication2.Models
     {
         public string Name { get; set; }
 
-        public List<string> Properties { get; set; }
+        //public List<string> Properties { get; set; }
+
     }
 }
