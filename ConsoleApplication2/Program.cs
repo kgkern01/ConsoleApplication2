@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ConsoleApplication2.Models;
 
 namespace ConsoleApplication2
 {
@@ -8,47 +9,32 @@ namespace ConsoleApplication2
     {
         static void Main(string[] args)
         {
-            var fileName = @"C:\Projects\Test\test.txt";
+            var fileName = @"C:\Projects\Test\Sample.txt";
 
             // Read a text file using StreamReader 
             using (var sr = new System.IO.StreamReader(fileName))
             {
                 string line;
-                string pathName = "";
-                var outputParameterList = new List<string>();
-                var inputParameterList = new List<string>();
-                var programList = new List<Program>();
-                var newPath = true;
+                var pathName = "";
+                var newTool = true;
+                var toolList = new List<ToolPath>();
+                var toolPath = new ToolPath();
 
                 while ((line = sr.ReadLine()) != null)
                 {
-                    //if (line.StartsWith("["))
-                    //{
-                        if (outputParameterList.Count > 0 && newPath == false)
-                        {
-                            Console.WriteLine("Output parameters:");
-                            foreach (var output in outputParameterList)
-                            {
-                                Console.WriteLine(output);
-                            }
-                            outputParameterList.Clear();
-                        }
-                        if (inputParameterList.Count > 0 && newPath == false)
-                        {
-                            Console.WriteLine("Input parameters:");
-                            foreach (var input in inputParameterList)
-                            {
-                                Console.WriteLine(input);
-                            }
-                            inputParameterList.Clear();
-                        }
-                        newPath = true;
+                    //Remove leading line
+                    if (!line.StartsWith("Link List") && line.Trim() != "")
+                    {
                         pathName = line;
-                        var type = line.Substring(line.IndexOf("[") + 1, line.IndexOf("]")-1);
+                        var isTool = line.StartsWith("[");
 
-                        var property = "";
-                        if(line.Contains(":"))
-                            property = line.Substring(line.IndexOf(":"));
+                        
+
+                        var type = line.Split('[', ']')[1];
+
+                        var linkedProperty = "";
+                        if (line.Contains(":"))
+                            linkedProperty = line.Substring(line.IndexOf(":") + 1);
 
                         var decimalCount = line.Count(d => d == '.');
 
@@ -58,69 +44,66 @@ namespace ConsoleApplication2
                         var propertyName = "";
 
                         var tool = line.Split('.');
-                        //programName = tool[0];
-                        //taskName = tool[1];
-                        //toolName = tool[2];
-
 
                         switch (decimalCount)
                         {
                             case 0:
-                                programName = tool[0].Substring(line.IndexOf("]") - 1);
+                                programName = tool[0].Substring(line.IndexOf("]") + 2);
                                 break;
                             case 1:
-                                programName = tool[0];
+                                programName = tool[0].Substring(line.IndexOf("]") + 2).Trim();
                                 taskName = tool[1];
                                 break;
                             case 2:
-                                programName = tool[0];
+                                programName = tool[0].Substring(line.IndexOf("]") + 2).Trim();
                                 taskName = tool[1];
-                                toolName = tool[2];
+                                toolName = tool[2].Contains(":") ? tool[2].Substring(0, tool[2].IndexOf(":")) : tool[2];
                                 break;
-                        }   
+                        }
 
+                        var parameterName = "";
+                        var paramterType = "";
+                        if (line.Contains("--->"))
+                        {
+                            parameterName = line.Substring(0, line.IndexOf(" --->")).Trim();
+                            paramterType = "Output";
+                        }
+                        else if (line.Contains("<---"))
+                        {
+                            parameterName = line.Substring(0, line.IndexOf(" <---")).Trim();
+                            paramterType = "Input";
+                        }
 
-                        //var program = new Models.Program
-                        //{
-                        //    Name = line.Substring()
-                        //};
+                        if (isTool)
+                        {
+                            toolPath = new ToolPath
+                            {
+                                ToolType = type
+                            };
+                        }
+                        else
+                        {
+                            toolPath.ToolProperties.Add(new Property
+                            {
+                                Direction = paramterType,
+                                Name = parameterName
+                            });
+                        }
 
                         Console.WriteLine("Path: " + pathName);
+                        Console.WriteLine("Parameter Name: " + parameterName);
+                        Console.WriteLine("Parameter type: " + paramterType);
                         Console.WriteLine("Program: " + programName);
                         Console.WriteLine("Type:" + type);
                         Console.WriteLine("Task: " + taskName);
                         Console.WriteLine("Tool: " + toolName);
-                        Console.WriteLine("Property: " + property);
+                        Console.WriteLine("Linked Property: " + linkedProperty);
                         Console.WriteLine("****************");
-                    //}
-                    //else
-                    //{
-                    //    newPath = false;
-                    //}
-
-                    if (line.Contains("--->"))
-                    {
-                        outputParameterList.Add(line.Substring(0, line.IndexOf(" --->")));
-
-
                     }
-                    else if (line.Contains("<---"))
-                    {
-                        inputParameterList.Add(line.Substring(0, line.IndexOf(" <---")));
-                    }
-
                 }
-
             }
 
             Console.ReadLine();
-        }
-
-        private static void ParseLine(string line, int decimalCount)
-        {
-            var cells = line.Split('.');
-
-            var property = line.Substring(line.IndexOf(":") + 1, line.Length);
         }
     }
 }

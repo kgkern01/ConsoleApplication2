@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\LinkedProperty.cs" />
     <Compile Include="Models\ToolPath.cs" />
     <Compile Include="Models\Program.cs" />
     <Compile Include="Models\Property.cs" />

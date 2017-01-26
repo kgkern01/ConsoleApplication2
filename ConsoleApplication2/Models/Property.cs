@@ -5,5 +5,7 @@
         public string Name { get; set; }
 
         public string Direction { get; set; }
+
+        public LinkedProperty { get; set; }
     }
 }
